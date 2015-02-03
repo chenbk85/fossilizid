@@ -3,9 +3,10 @@
 # codegenclient
 
 import os
-from deletenonespacelstrip import deleteNoneSpacelstrip
 
 build_path = './build/'
+achieve_include = ''
+achieve_object = 'Fossilizid::juggle::object'
 
 def maketypegetvalue(type):
     if type == 'int':
@@ -215,11 +216,15 @@ def codegenstruct(filelist):
 def codegenclient(filelist):
     if not os.path.isdir(build_path):
         os.mkdir(build_path)
+    if not os.path.isdir(build_path + 'client'):
+        os.mkdir(build_path + 'client')
 
     defmodulelist = []
 
+    codecreatemodule = "#include <juggle.h>\n\nnamespace Fossilizid{\nnamespace juggle{\n\nvoid create_module(){\n"
+
     for filename, list in filelist.items():
-        code = '#include <juggle.h>\n\n'
+        code = '#include <' + achieve_include + '>\n#include <juggle.h>\n#include <boost/make_shared.hpp>\n\n'
 
         struct = list['struct']
         module = list['module']
@@ -231,58 +236,68 @@ def codegenclient(filelist):
             if k in defmodulelist:
                 raise 'redefined module %s' % k
             code += 'namespace sync{\n\n'
-            code += 'class ' + k + ': public ' + 'caller' + '{\n' + 'public:\n'
-            code += k + '(channel * ch) : caller(ch, ' + k + '){\n}\n\n'
-            code += '~' + k + '(){\n}\n\n'
+            code += 'class ' + k + ': public ' + 'Fossilizid::juggle::caller' + '{\n' + 'public:\n'
+            code += '	' + k + '(Fossilizid::juggle::channel * ch) : caller(ch, \"' + k + '\"){\n' + '	}\n\n'
+            code += '	~' + k + '(){\n' + '	}\n\n'
             for func in v:
                 code += '	' + maketypetocpptype(func[0]) + ' ' + func[1] + '(' + maketypetocpptype(func[2][0]) + ' ' + func[2][1]
                 for argv in func[3:]:
                     code += ',' + maketypetocpptype(argv[0]) + ' ' + argv[1]
                 code += '){\n'
-                code += '		boost::shared_ptr<object> v = boost::make_shared<object>();\n'
+                code += '		boost::shared_ptr<Fossilizid::juggle::object> v = boost::make_shared<' + achieve_object + '>();\n'
                 for argv in func[2:]:
                     code += '		(*v)[\"' + argv[1] + '\"] = ' + argv[1] + ';\n'
-                code += '		boost::shared_ptr<object> r = call_module_method_sync(' + k + '_' + func[1] + ', v);\n'
+                code += '		boost::shared_ptr<Fossilizid::juggle::object> r = call_module_method_sync(\"' + k + '_' + func[1] + '\", v);\n'
                 code += '		return ' + makeret(func[0], struct) + ';\n'
                 code += '	}\n\n'
             code += '};\n\n'
             code += '}\n\n'
 
             code += 'namespace async{\n\n'
-            code += 'class ' + k + ': public ' + 'caller' + '{\n' + 'public:\n'
-            code += k + '(channel * ch) : caller(ch, ' + k + 'uuid::UUID()' + '){\n}\n\n'
-            code += '~' + k + '(){\n}\n\n'
+            code += 'class ' + k + ': public ' + 'Fossilizid::juggle::caller' + '{\n' + 'public:\n'
+            code += '	' + k + '(Fossilizid::juggle::channel * ch) : caller(ch, \"' + k + '\"' + '){\n	}\n\n'
+            code += '	~' + k + '(){\n	}\n\n'
             for func in v:
                 code += '	' + maketypetocpptype(func[0]) + ' ' + func[1] + '('
                 for argv in func[2:]:
                     code += maketypetocpptype(argv[0]) + ' ' + argv[1] + ', '
                 code += 'boost::function<void(' + maketypetocpptype(func[0]) + ')> callback){\n'
-                code += '		boost::shared_ptr<object> v = boost::make_shared<object>();\n'
+                code += '		boost::shared_ptr<Fossilizid::juggle::object> v = boost::make_shared<' + achieve_object + '>();\n'
                 for argv in func[2:]:
                     code += '		(*v)[\"' + argv[1] + '\"] = ' + argv[1] + ';\n'
-                code += '		auto cb = [this, callback](boost::shared_ptr<object> r){\n'
+                code += '		auto cb = [this, callback](boost::shared_ptr<Fossilizid::juggle::object> r){\n'
                 if func[0] != 'void':
-                    code += '			' + maketypetocpptype(func[0]) + ' ret = ' + makeret(func[0], struct) + ';\n'
-                code += '			callback(r);\n' \
-                        '		}\n'
-                code += '		call_module_method_async(' + k + '_' + func[1] + ', v, cb' + ');\n'
+                    code += '			' + maketypetocpptype(func[0]) + ' ret = ' + makeret(func[0], struct) + '\n'
+                code += '			callback(ret);\n' \
+                        '		};\n'
+                code += '		call_module_method_async(\"' + k + '_' + func[1] + '\", v, cb' + ');\n'
                 code += '	}\n\n'
             code += '};\n\n'
             code += '}\n\n'
             defmodulelist.append(k)
 
-        if code != '#include <juggle.h>\n\n':
-            file = open(build_path + filename + 'caller.h', 'w')
+        if code != '#include <' + achieve_include + '>\n#include <juggle.h>\n#include <boost/make_shared.hpp>\n\n':
+            file = open(build_path + 'client/' + filename + 'caller.h', 'w')
             file.write(code)
+
+    codecreatemodule += '}\n\n}\n}\n\n'
+
+    file = open(build_path + 'client/' + 'callerservicedefine.cpp', 'w')
+    file.write(codecreatemodule)
 
 def codegenserver(filelist):
     if not os.path.isdir(build_path):
         os.mkdir(build_path)
+    if not os.path.isdir(build_path + 'server'):
+        os.mkdir(build_path + 'server')
 
     defmodulelist = []
 
+    codeglobalhandle = ""
+    codecreatemodule = "namespace Fossilizid{\nnamespace juggle{\n\nvoid create_module(){\n"
+
     for filename, list in filelist.items():
-        code = '#include <juggle.h>\n\n'
+        code = '#include <' + achieve_include + '>\n#include <juggle.h>\n#include <boost/make_shared.hpp>\n\n'
 
         struct = list['struct']
         module = list['module']
@@ -293,10 +308,10 @@ def codegenserver(filelist):
         for k, v in module.items():
             if k in defmodulelist:
                 raise 'redefined module %s' % k
-            code += 'class ' + k + ': public ' + 'module' + '{\n' + 'public:\n'
-            code += '	' + k + '() : module(ch, ' + k + 'uuid::UUID()' + '){\n'
+            code += 'class ' + k + ': public ' + 'Fossilizid::juggle::module' + '{\n' + 'public:\n'
+            code += '	' + k + '() : module(\"' + k + '\", Fossilizid::uuid::UUID()' + '){\n'
             for func in v:
-                code += '		_service_handle->register_module_method(' + k + '_' + func[1] + ',' + 'boost::bind(' + '&' + k + '::' + 'call_' + func[1] + ', this, _1)' + ');\n'
+                code += '		Fossilizid::juggle::_service_handle->register_module_method(\"' + k + '_' + func[1] + '\",' + ' boost::bind(' + '&' + k + '::' + 'call_' + func[1] + ', this, _1, _2)' + ');\n'
             code += '	}\n\n'
             code += '	' + '~' + k + '(){\n	}\n\n'
             for func in v:
@@ -304,16 +319,17 @@ def codegenserver(filelist):
                 for argv in func[3:]:
                     code += ',' + maketypetocpptype(argv[0]) + ' ' + argv[1]
                 code += ') = 0;\n\n'
-                code += '	void call_' + func[1] + '(boost::shared_ptr<channel> ch, boost::shared_ptr<object> v){\n'
+                code += '	void call_' + func[1] + '(Fossilizid::juggle::channel * ch, boost::shared_ptr<Fossilizid::juggle::object> v){\n'
                 for argv in func[2:]:
                     code += makevalue(argv[0], argv[1], struct)
                 code += '		auto ret = ' + func[1] + '(' + func[2][1]
                 for argv in func[3:]:
                     code += ', ' + argv[1]
                 code += ');\n'
-                code += '		boost::shared_ptr<object> r = boost::make_shared<object>();\n'
-                code += '		(*r)[\"suuid\"] = (*v)[\"suuid\"];\n'
-                code += '		(*r)[\"method\"] = (*value)[\"method\"];\n\n'
+                code += '		boost::shared_ptr<Fossilizid::juggle::object> r = boost::make_shared<' + achieve_object + '>();\n'
+                code += '		(*r)[\"suuid\"] = (*v)[\"suuid\"].asstring();\n'
+                code += '		(*r)[\"method\"] = (*v)[\"method\"].asstring();\n'
+                code += '		(*r)[\"rpcevent\"] = \"reply_rpc_method\";\n\n'
                 if func[0].find('std::vector') != -1:
                     code += '		for(auto v : ret){\n'
                     code += '			(*r)[\"ret\"].append(v);\n'
@@ -324,8 +340,16 @@ def codegenserver(filelist):
                 code += '	}\n\n'
             code += '};\n\n'
 
-        if code != '#include <juggle.h>\n\n':
-            file = open(build_path + filename + 'module.h', 'w')
+            code += k + '* create_' + k + '();\n'
+
+        if code != '#include <' + achieve_include + '>\n#include <juggle.h>\n#include <boost/make_shared.hpp>\n\n':
+            file = open(build_path + 'server/' + filename + 'module.h', 'w')
             file.write(code)
 
-    pass
+        codeglobalhandle = '#include \"' + filename + 'module.h\"\n\nstatic ' + k + ' * _handle_' + k + ' = 0;\n\n'
+        codecreatemodule += '	_handle_' + k + '= create_' + k + '();\n'
+
+    codecreatemodule += '}\n\n}\n}\n\n'
+
+    file = open(build_path + 'server/' + 'globalhandledefine.cpp', 'w')
+    file.write(codeglobalhandle + codecreatemodule)

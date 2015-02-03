@@ -77,6 +77,7 @@ public:
 	virtual void operator =(const int64_t & other) = 0;
 	virtual void operator =(const double & other) = 0;
 	virtual void operator =(const std::string & other) = 0;
+	virtual void operator =(const char * other) = 0;
 
 };
 

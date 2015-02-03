@@ -47,7 +47,7 @@ public:
 	
 	void register_module_method(std::string methodname, boost::function<void(channel *, boost::shared_ptr<object>)> modulemethod);
 
-	void register_rpc_callback(uuid::uuid, boost::function<void(channel *, boost::shared_ptr<object>)> callback);
+	void register_rpc_callback(uuid::uuid, boost::function<void(boost::shared_ptr<object>)> callback);
 	
 	context::context get_current_context();
 
@@ -68,7 +68,7 @@ private:
 	boost::unordered_map<std::string, boost::function<void(channel *, boost::shared_ptr<object>)> > method_map;
 	
 	boost::mutex mu_method_callback_map;
-	boost::unordered_map<uuid::uuid, boost::function<void(channel *, boost::shared_ptr<object>)> > method_callback_map;
+	boost::unordered_map<uuid::uuid, boost::function<void(boost::shared_ptr<object>)> > method_callback_map;
 
 private:
 	boost::mutex mu_wake_up_vector;
@@ -82,6 +82,8 @@ private:
 	std::vector<channel * > array_new_channel;
 
 };
+
+void create_module();
 
 } /* namespace juggle */
 } /* namespace Fossilizid */

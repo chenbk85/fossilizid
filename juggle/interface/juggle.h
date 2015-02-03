@@ -13,4 +13,9 @@
 #include "semaphore.h"
 #include "object.h"
 
+#include "../service/caller.h"
+#include "../service/module.h"
+#include "../service/service.h"
+#include "../service/globalhandle.h"
+
 #endif //_juggle_h

@@ -13,9 +13,8 @@
 namespace Fossilizid{
 namespace juggle {
 
-caller::caller(channel * ch, std::string & modulename){
+caller::caller(channel * ch, std::string modulename){
 	_module_name = modulename;
-	//_module_id = moduleid;
 	_ch = ch;
 }
 
@@ -30,15 +29,16 @@ uuid::uuid caller::module_id(){
 	return _module_id;
 }
 
-boost::shared_ptr<object> caller::call_module_method_sync(std::string & methodname, boost::shared_ptr<object> value){
+boost::shared_ptr<object> caller::call_module_method_sync(std::string methodname, boost::shared_ptr<object> value){
 	semaphore s;
 	call_module_method_async(methodname, value, boost::bind(&semaphore::post, &s, _1));
 	return s.wait();
 }
 
-void caller::call_module_method_async(std::string & methodname, boost::shared_ptr<object> value, boost::function<void(boost::shared_ptr<object>)> callback){
+void caller::call_module_method_async(std::string methodname, boost::shared_ptr<object> value, boost::function<void(boost::shared_ptr<object>)> callback){
 	(*value)["method"] = methodname;
 	(*value)["suuid"] = uuid::UUID();
+	(*value)["rpcevent"] = "call_rpc_method";
 
 	boost::static_pointer_cast<juggleservice>(_service_handle)->register_rpc_callback((*value)["suuid"].asstring(), callback);
 	

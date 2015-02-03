@@ -17,9 +17,4 @@ SET(SRC_LIST
 )
 
 ADD_LIBRARY(juggle ${SRC_LIST} ${header_files})
-
-file(GLOB pluginjson_head_file ./plugin/json ./plugin/json/*.h)
-
-AUX_SOURCE_DIRECTORY(./plugin/json pluginjson_SRC)
-
-ADD_LIBRARY(jugglejsonplogin ${pluginjson_SRC} ${pluginjson_head_file})
+target_link_libraries(juggle uuid)

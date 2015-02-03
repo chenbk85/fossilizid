@@ -9,7 +9,7 @@
 namespace Fossilizid{
 namespace juggle {
 
-module::module(std::string & modulename, uuid::uuid & moduleid){
+module::module(std::string modulename, uuid::uuid & moduleid){
 	_module_name = modulename;
 	_module_id = moduleid;
 }

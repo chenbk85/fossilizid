@@ -31,5 +31,9 @@ def traversalclass(dirpath):
     codegen.codegenserver(filelist)
     codegen.codegenstruct(filelist)
 
-
-traversalclass('./')
+if __name__ == '__main__':
+    import sys
+    codegen.build_path = sys.argv[2]
+    codegen.achieve_object = sys.argv[3]
+    codegen.achieve_include = sys.argv[4]
+    traversalclass(sys.argv[1])

@@ -19,7 +19,7 @@ namespace juggle{
 
 class module{
 public:
-	module(std::string & modulename, uuid::uuid & moduleid);
+	module(std::string modulename, uuid::uuid & moduleid);
 	~module();
 
 public:

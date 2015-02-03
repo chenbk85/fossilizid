@@ -1,51 +1,34 @@
-#include "..\..\reduce\service\acceptservice.h"
-#include "../../context/context.h"
-#include "../../reduce/service/locale_obj.h"
-#include "../../reduce/service/rpcsession.h"
+#include "../juggle_achieve/channelserver.h"
+#include "../juggle_scprit/server/jugglemodule.h"
 
-class account{
+class juggleimpl : public juggle{
 public:
-	account() : obj(new Fossilizid::reduce::locale_obj("account")){
-		obj->register_rpc_mothed(std::make_pair("login", boost::bind(&account::login_call_back, this, _1)));
-		Fossilizid::reduce::_service_handle->register_global_obj(obj);
+	virtual std::string login(std::string argv3){
+		printf("juggleimpl login %s\n", argv3.c_str());
+
+		return "login sucess";
 	}
 
-	bool login(){
-		printf("login sucess\n");
-		return true;
+	virtual std::string test(std::string argv3){
+		printf("juggleimpl test %s\n", argv3.c_str());
+
+		return "test sucess";
 	}
 
-	Json::Value login_call_back(Json::Value & v){
-		Json::FastWriter write;
-		printf("%s\n", write.write(v).c_str());
-
-		boost::shared_ptr<Fossilizid::reduce::rpcsession> s = boost::static_pointer_cast<Fossilizid::reduce::rpcsession>(Fossilizid::reduce::_service_handle->get_current_session());
-
-		Json::Value value;
-		value["epuuid"] = s->epuuid();
-		value["suuid"] = v["suuid"];
-		value["eventtype"] = "rpc_event";
-		value["rpc_event_type"] = "call_rpc_mothed_ret";
-		value["fnname"] = "login";
-		value["ret"] = login();
-		
-		return value;
-	}
-
-private:
-	boost::shared_ptr<Fossilizid::reduce::locale_obj> obj;
 };
 
+juggle * create_juggle(){
+	return new juggleimpl();
+}
+
 int main(){
-	Fossilizid::reduce::acceptservice _service("127.0.0.1", 7777);
+	Fossilizid::reduce::acceptor::channelserver server(Fossilizid::juggle::create_service());
 
-	_service.init();
-
-	account _account;
+	server.init("127.0.0.1", 1234);
 
 	while (1){
-		_service.poll();
+		server.poll();
 	}
 
-	return 0;
+	return 1;
 }

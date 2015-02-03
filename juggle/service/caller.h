@@ -22,7 +22,7 @@ namespace juggle{
 
 class caller{
 public:
-	caller(channel * ch, std::string & modulename);
+	caller(channel * ch, std::string modulename);
 	~caller();
 
 public:
@@ -39,12 +39,12 @@ public:
 	/*
 	 * call rpc mothed
 	 */
-	boost::shared_ptr<object> call_module_method_sync(std::string & methodname, boost::shared_ptr<object> value);
+	boost::shared_ptr<object> call_module_method_sync(std::string methodname, boost::shared_ptr<object> value);
 
 	/*
 	 * call rpc mothed
 	 */
-	void call_module_method_async(std::string & methodname, boost::shared_ptr<object> value, boost::function<void(boost::shared_ptr<object>)> callback);
+	void call_module_method_async(std::string methodname, boost::shared_ptr<object> value, boost::function<void(boost::shared_ptr<object>)> callback);
 
 protected:
 	std::string _module_name;

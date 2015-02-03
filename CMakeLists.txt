@@ -5,18 +5,6 @@ ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
 ADD_DEFINITIONS(-D_WINSOCK_DEPRECATED_NO_WARNINGS)
 ADD_DEFINITIONS(-D___mempool___)
 
-set(portaudio_INCLUDE_PATH ${PROJECT_SOURCE_DIR}//third_party//portaudio//portaudio//include CACHE PATH "Fossilizid include path")
-INCLUDE_DIRECTORIES(${portaudio_INCLUDE_PATH})
-
-set(portaudio_LIBS_PATH ${PROJECT_SOURCE_DIR}//third_party//portaudio//portaudio//lib CACHE PATH "Fossilizid include path")
-link_directories(${portaudio_LIBS_PATH})
-
-set(speex_INCLUDE_PATH ${PROJECT_SOURCE_DIR}//third_party//speex//speex//include CACHE PATH "Fossilizid include path")
-INCLUDE_DIRECTORIES(${speex_INCLUDE_PATH})
-
-set(speex_LIBS_PATH ${PROJECT_SOURCE_DIR}//third_party//speex//speex//lib CACHE PATH "Fossilizid include path")
-link_directories(${speex_LIBS_PATH})
-
 set(BOOST_INCLUDE_PATH ${PROJECT_SOURCE_DIR}//third_party//boost CACHE PATH "Fossilizid include path")
 INCLUDE_DIRECTORIES(${BOOST_INCLUDE_PATH})
 
@@ -41,12 +29,10 @@ SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 
 ADD_SUBDIRECTORY(pool ${Fossilizid_bin_path}/pool)
 ADD_SUBDIRECTORY(remoteq ${Fossilizid_bin_path}/remoteq)
-ADD_SUBDIRECTORY(reduce ${Fossilizid_bin_path}/reduce)
 ADD_SUBDIRECTORY(juggle ${Fossilizid_bin_path}/juggle)
 ADD_SUBDIRECTORY(container ${Fossilizid_bin_path}/container)
 ADD_SUBDIRECTORY(context ${Fossilizid_bin_path}/context)
 ADD_SUBDIRECTORY(reliablyt ${Fossilizid_bin_path}/reliablyt)
-ADD_SUBDIRECTORY(vchat ${Fossilizid_bin_path}/vchat)
 ADD_SUBDIRECTORY(uuid ${Fossilizid_bin_path}/uuid)
 ADD_SUBDIRECTORY(third_party ${Fossilizid_bin_path}/third_party)
 ADD_SUBDIRECTORY(test ${Fossilizid_bin_path}/test)
