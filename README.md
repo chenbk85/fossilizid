@@ -39,14 +39,8 @@ pool: mempool & objpool
 ----------
 remoteq: network library
 
----------- 
-reduce: reduce service
-
 ----------
 reliablyt: udp reliably transmission 
-
-----------
-vchat: voice chat framework
 
 ----------
 
