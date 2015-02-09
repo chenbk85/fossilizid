@@ -340,14 +340,12 @@ def codegenserver(filelist):
                 code += '	}\n\n'
             code += '};\n\n'
 
-            code += k + '* create_' + k + '();\n'
-
         if code != '#include <' + achieve_include + '>\n#include <juggle.h>\n#include <boost/make_shared.hpp>\n\n':
             file = open(build_path + 'server/' + filename + 'module.h', 'w')
             file.write(code)
 
         codeglobalhandle = '#include \"' + filename + 'module.h\"\n\nstatic ' + k + ' * _handle_' + k + ' = 0;\n\n'
-        codecreatemodule += '	_handle_' + k + '= create_' + k + '();\n'
+        codecreatemodule += '	_handle_' + k + '= new ' + k + '();\n'
 
     codecreatemodule += '}\n\n}\n}\n\n'
 
