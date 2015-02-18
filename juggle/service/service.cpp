@@ -10,6 +10,13 @@
 #include "../../pool/factory.h"
 #include "globalhandle.h"
 
+#ifdef _WINDOWS
+#include <Windows.h>
+boost::uint64_t _clock(){
+	return GetTickCount64();
+}
+#endif
+
 namespace Fossilizid{
 namespace juggle {
 
@@ -28,6 +35,9 @@ juggleservice::~juggleservice(){
 }
 
 void juggleservice::init(){
+	clockstamp = _clock();
+	timestamp = time(0);
+
 	create_module();
 
 	context::context current_ct = context::makecontext();
@@ -45,9 +55,15 @@ void juggleservice::poll(){
 	context::yield(_main_context);
 }
 
+boost::uint64_t juggleservice::unixtime(){
+	return timestamp;
+}
+
 void juggleservice::loop_main(){
 	while(1){
 		{
+			timestamp += _clock() - clockstamp;
+
 			boost::mutex::scoped_lock lmu_channel(mu_channel);
 			boost::mutex::scoped_lock lmu_method_map(mu_method_map);
 			boost::mutex::scoped_lock lmu_method_callback_map(mu_method_callback_map);
@@ -89,6 +105,19 @@ void juggleservice::loop_main(){
 				context::yield(ct);
 			}
 		}
+
+
+		{
+			boost::mutex::scoped_lock l(mu_vsemaphore);
+			if (!vsemaphore.empty()){
+				auto find = vsemaphore.find(timestamp);
+				auto ct = find->second;
+				vsemaphore.erase(find);
+				l.unlock();
+
+				context::yield(ct);
+			}
+		}
 	}
 }
 
@@ -100,6 +129,11 @@ void juggleservice::add_rpcsession(channel * ch){
 void juggleservice::remove_rpcsession(channel * ch){
 	boost::mutex::scoped_lock l(mu_channel);
 	set_channel.erase(ch);
+}
+
+void juggleservice::register_semaphore(semaphore * _semaphore){
+	boost::mutex::scoped_lock l(mu_vsemaphore);
+	vsemaphore.insert(std::make_pair(_semaphore->_timeout, _semaphore->wait_ct));
 }
 
 void juggleservice::register_module_method(std::string methodname, boost::function<void(channel *, boost::shared_ptr<object>)> modulemethod){

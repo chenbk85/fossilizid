@@ -8,6 +8,8 @@
 
 #include "channel.h"
 
+#include <juggle.h>
+
 #include <boost/make_shared.hpp>
 
 namespace Fossilizid{
@@ -43,7 +45,7 @@ void channelserver::poll(){
 			if (ch != 0){
 				boost::shared_ptr<jsonplugin::channel> c = boost::make_shared<jsonplugin::channel>(ch);
 				mapchannel.insert(std::make_pair(ch, c));
-				c->handle_new_channel();
+				Fossilizid::juggle::_service_handle->add_rpcsession(c.get());
 			}
 		}
 		break;
@@ -65,7 +67,7 @@ void channelserver::poll(){
 
 	case remoteq::event_type_disconnect:
 		{
-			mapchannel[ev.handle.ch]->handle_disconnect_channel();
+			Fossilizid::juggle::_service_handle->remove_rpcsession(mapchannel[ev.handle.ch].get());
 			mapchannel.erase(ev.handle.ch);
 			remoteq::close(ev.handle.ch);
 		}
@@ -97,7 +99,7 @@ boost::shared_ptr<juggle::channel> channelserver::connect(char * ip, short port)
 	if (ch != 0){
 		boost::shared_ptr<jsonplugin::channel> c = boost::make_shared<jsonplugin::channel>(ch);
 		mapchannel.insert(std::make_pair(ch, c));
-		c->handle_new_channel();
+		Fossilizid::juggle::_service_handle->add_rpcsession(c.get());
 		
 		return c;
 	}
@@ -142,7 +144,7 @@ void channelserver::net_work(){
 
 	case remoteq::event_type_disconnect:
 		{
-			mapchannel[ev.handle.ch]->handle_disconnect_channel();
+			Fossilizid::juggle::_service_handle->remove_rpcsession(mapchannel[ev.handle.ch].get());
 			mapchannel.erase(ev.handle.ch);
 			remoteq::close(ev.handle.ch);
 		}

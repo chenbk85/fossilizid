@@ -32,7 +32,7 @@ uuid::uuid caller::module_id(){
 boost::shared_ptr<object> caller::call_module_method_sync(std::string methodname, boost::shared_ptr<object> value){
 	semaphore s;
 	call_module_method_async(methodname, value, boost::bind(&semaphore::post, &s, _1));
-	return s.wait();
+	return s.wait(-1);
 }
 
 void caller::call_module_method_async(std::string methodname, boost::shared_ptr<object> value, boost::function<void(boost::shared_ptr<object>)> callback){

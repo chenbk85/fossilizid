@@ -13,7 +13,6 @@ namespace Fossilizid{
 namespace juggle {
 
 semaphore::semaphore(){
-	_signal = 0;
 	wait_ct = 0;
 }
 
@@ -22,7 +21,7 @@ semaphore::~semaphore(){
 
 void semaphore::post(boost::shared_ptr<object> signal){
 	boost::mutex::scoped_lock l(mu_signal);
-	_signal = signal;
+	_signal.push(signal);
 	l.unlock();
 
 	if (wait_ct != 0){
@@ -30,19 +29,28 @@ void semaphore::post(boost::shared_ptr<object> signal){
 	}
 }
 
-boost::shared_ptr<object> semaphore::wait(){
+boost::shared_ptr<object> semaphore::wait(time_t timeout){
+	boost::shared_ptr<object> _signal_ = 0;
+
 	do{
 		boost::mutex::scoped_lock l(mu_signal);
-		if (_signal != 0){
+		if (!_signal.empty()){
 			break;
 		}
-		wait_ct = _service_handle->get_current_context();
+		wait_ct = _service_handle->get_current_context(); 
+		_timeout = *((uint64_t*)&timeout);
 		l.unlock();
 
 		_service_handle->scheduler();
 	} while (0);
 
-	return _signal;
+	{
+		boost::mutex::scoped_lock l(mu_signal);
+
+		_signal_ = _signal.back();
+		_signal.pop();
+	}
+	return _signal_;
 }
 
 } /* namespace juggle */

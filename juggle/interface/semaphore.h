@@ -7,6 +7,8 @@
 #ifndef _semaphore_h
 #define _semaphore_h
 
+#include <queue>
+
 #include <boost/thread/mutex.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -31,13 +33,16 @@ public:
 	/*
 	 * wait a signal
 	 */
-	boost::shared_ptr<object> wait();
+	boost::shared_ptr<object> wait(time_t timeout);
 
 private:
 	boost::mutex mu_signal;
-	boost::shared_ptr<object> _signal;
+	std::queue<boost::shared_ptr<object> > _signal;
+	uint64_t _timeout;
 	context::context wait_ct;
 
+	friend class juggleservice;
+	
 };
 
 } /* namespace juggle */

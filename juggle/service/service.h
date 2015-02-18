@@ -18,6 +18,7 @@
 
 #include "../interface/service.h"
 #include "../interface/channel.h"
+#include "../interface/semaphore.h"
 
 #include "module.h"
 
@@ -40,24 +41,61 @@ public:
 	 */
 	virtual void poll();
 
-public:
-	void add_rpcsession(channel * ch);
+	/*
+	 * add rpcsession
+	 */
+	virtual void add_rpcsession(channel * ch);
 
-	void remove_rpcsession(channel * ch);
+	/*
+	 * remove rpcsession
+	 */
+	virtual void remove_rpcsession(channel * ch);
 	
+	/*
+	 * unixtime
+	 */
+	virtual uint64_t unixtime();
+
+public:
+	/*
+	 * register semaphore
+	 */
+	void register_semaphore(semaphore * _semaphore);
+
+	/*
+ 	 * register module method
+	 */
 	void register_module_method(std::string methodname, boost::function<void(channel *, boost::shared_ptr<object>)> modulemethod);
 
+	/*
+	 * register rpc callback
+	 */
 	void register_rpc_callback(uuid::uuid, boost::function<void(boost::shared_ptr<object>)> callback);
 	
+	/*
+	 * get current context
+	 */
 	context::context get_current_context();
 
+	/*
+ 	 * wake up context
+	 */
 	void wake_up_context(context::context ct);
 
+	/*
+ 	 * scheduler
+	 */
 	void scheduler();
 
 private:
+	/*
+	 * set current context
+	 */
 	void set_current_context(context::context _context);
 
+	/*
+	 * loop main
+	 */
 	void loop_main();
 
 private:
@@ -74,12 +112,19 @@ private:
 	boost::mutex mu_wake_up_vector;
 	std::vector<context::context> wait_weak_up_context;
 
+	boost::mutex mu_vsemaphore;
+	std::map<time_t, context::context> vsemaphore;
+
 private:
 	boost::mutex mu_channel;
 	std::set<channel * > set_channel;
 
 	boost::mutex mu_new_channel;
 	std::vector<channel * > array_new_channel;
+
+private:
+	time_t clockstamp;
+	time_t timestamp;
 
 };
 

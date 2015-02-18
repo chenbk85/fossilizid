@@ -9,6 +9,8 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include "../interface/channel.h"
+
 namespace Fossilizid{
 namespace juggle{
 
@@ -23,6 +25,21 @@ public:
 	 * drive service work
 	 */
 	virtual void poll() = 0;
+
+	/*
+	 * add rpcsession
+	 */
+	virtual void add_rpcsession(channel * ch) = 0;
+
+	/*
+	 * remove rpcsession
+	 */
+	virtual void remove_rpcsession(channel * ch) = 0;
+
+	/*
+	 * unixtime
+	 */
+	virtual uint64_t unixtime() = 0;
 
 };
 

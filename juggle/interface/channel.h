@@ -10,12 +10,11 @@
 #include <boost/shared_ptr.hpp>
 
 #include "object.h"
-#include "../service/channel.h"
 
 namespace Fossilizid{
 namespace juggle{
 
-class channel : public base::channel{
+class channel{
 public:
 	/*
 	 * push a object to channel

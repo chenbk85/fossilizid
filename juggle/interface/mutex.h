@@ -19,8 +19,14 @@ public:
 	mutex();
 	~mutex();
 
+	/*
+	 * lock
+	 */
 	void lock();
 
+	/*
+	 * unlock
+	 */
 	void unlock();
 
 private:
