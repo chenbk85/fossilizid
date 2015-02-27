@@ -20,6 +20,11 @@ public:
 	 * push a object to channel
 	 */
 	virtual void push(boost::shared_ptr<object> v) = 0;
+
+	/*
+	 * post a object to channel
+	 */
+	virtual void post(boost::shared_ptr<object> v) = 0;
 	
 	/*
 	 * get a object from channel
