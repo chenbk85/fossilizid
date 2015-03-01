@@ -37,14 +37,24 @@ public:
 	uuid::uuid module_id();
 	
 	/*
-	 * call rpc mothed
+	 * call rpc mothed reliable
 	 */
-	boost::shared_ptr<object> call_module_method_sync(std::string methodname, boost::shared_ptr<object> value);
+	boost::shared_ptr<object> call_module_method_sync_reliable(std::string methodname, boost::shared_ptr<object> value);
 
 	/*
-	 * call rpc mothed
+	* call rpc mothed fast
+	*/
+	boost::shared_ptr<object> call_module_method_sync_fast(std::string methodname, boost::shared_ptr<object> value);
+
+	/*
+	 * call rpc mothed reliable
 	 */
-	void call_module_method_async(std::string methodname, boost::shared_ptr<object> value, boost::function<void(boost::shared_ptr<object>)> callback);
+	void call_module_method_async_reliable(std::string methodname, boost::shared_ptr<object> value, boost::function<void(boost::shared_ptr<object>)> callback);
+	
+	/*
+	* call rpc mothed fast
+	*/
+	void call_module_method_async_fast(std::string methodname, boost::shared_ptr<object> value, boost::function<void(boost::shared_ptr<object>)> callback);
 
 protected:
 	std::string _module_name;

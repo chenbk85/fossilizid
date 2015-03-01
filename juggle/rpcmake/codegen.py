@@ -583,15 +583,18 @@ def codegenclient(filelist):
             code += '	' + k + '(Fossilizid::juggle::channel * ch) : caller(ch, \"' + k + '\"){\n' + '	}\n\n'
             code += '	~' + k + '(){\n' + '	}\n\n'
             for func in v:
-                code += '	' + maketypetocpptype(func[0]) + ' ' + func[1] + '(' + maketypetocpptype(func[2][0]) + ' ' + func[2][1]
-                for argv in func[3:]:
+                code += '	' + maketypetocpptype(func[1]) + ' ' + func[2] + '(' + maketypetocpptype(func[3][0]) + ' ' + func[3][1]
+                for argv in func[4:]:
                     code += ',' + maketypetocpptype(argv[0]) + ' ' + argv[1]
                 code += '){\n'
                 code += '		boost::shared_ptr<Fossilizid::juggle::object> v = boost::make_shared<' + achieve_object + '>();\n'
-                for argv in func[2:]:
+                for argv in func[3:]:
                     code += '		(*v)[\"' + argv[1] + '\"] = ' + argv[1] + ';\n'
-                code += '		boost::shared_ptr<Fossilizid::juggle::object> r = call_module_method_sync(\"' + k + '_' + func[1] + '\", v);\n'
-                code += '		return ' + makeret(func[0], struct) + ';\n'
+                if func[0] == 'reliable':
+                    code += '		boost::shared_ptr<Fossilizid::juggle::object> r = call_module_method_sync_reliable(\"' + k + '_' + func[1] + '\", v);\n'
+                elif func[0] == 'fast':
+                    code += '		boost::shared_ptr<Fossilizid::juggle::object> r = call_module_method_sync_fast(\"' + k + '_' + func[1] + '\", v);\n'
+                code += '		return ' + makeret(func[1], struct) + ';\n'
                 code += '	}\n\n'
             code += '};\n\n'
             code += '}\n\n'
@@ -601,19 +604,22 @@ def codegenclient(filelist):
             code += '	' + k + '(Fossilizid::juggle::channel * ch) : caller(ch, \"' + k + '\"' + '){\n	}\n\n'
             code += '	~' + k + '(){\n	}\n\n'
             for func in v:
-                code += '	' + maketypetocpptype(func[0]) + ' ' + func[1] + '('
-                for argv in func[2:]:
+                code += '	' + maketypetocpptype(func[1]) + ' ' + func[2] + '('
+                for argv in func[3:]:
                     code += maketypetocpptype(argv[0]) + ' ' + argv[1] + ', '
-                code += 'boost::function<void(' + maketypetocpptype(func[0]) + ')> callback){\n'
+                code += 'boost::function<void(' + maketypetocpptype(func[1]) + ')> callback){\n'
                 code += '		boost::shared_ptr<Fossilizid::juggle::object> v = boost::make_shared<' + achieve_object + '>();\n'
-                for argv in func[2:]:
+                for argv in func[3:]:
                     code += '		(*v)[\"' + argv[1] + '\"] = ' + argv[1] + ';\n'
                 code += '		auto cb = [this, callback](boost::shared_ptr<Fossilizid::juggle::object> r){\n'
-                if func[0] != 'void':
-                    code += '			' + maketypetocpptype(func[0]) + ' ret = ' + makeret(func[0], struct) + '\n'
+                if func[1] != 'void':
+                    code += '			' + maketypetocpptype(func[1]) + ' ret = ' + makeret(func[1], struct) + '\n'
                 code += '			callback(ret);\n' \
                         '		};\n'
-                code += '		call_module_method_async(\"' + k + '_' + func[1] + '\", v, cb' + ');\n'
+                if func[0] == 'reliable':
+                    code += '		call_module_method_async_reliable(\"' + k + '_' + func[1] + '\", v, cb' + ');\n'
+                elif func[0] == 'fast':
+                    code += '		call_module_method_async_fast(\"' + k + '_' + func[1] + '\", v, cb' + ');\n'
                 code += '	}\n\n'
             code += '};\n\n'
             code += '}\n\n'
@@ -658,28 +664,31 @@ def codegenserver(filelist):
             code += '	}\n\n'
             code += '	' + '~' + k + '(){\n	}\n\n'
             for func in v:
-                code += '	virtual ' + maketypetocpptype(func[0]) + ' ' + func[1] + '(' + maketypetocpptype(func[2][0]) + ' ' + func[2][1]
-                for argv in func[3:]:
+                code += '	virtual ' + maketypetocpptype(func[1]) + ' ' + func[2] + '(' + maketypetocpptype(func[3][0]) + ' ' + func[3][1]
+                for argv in func[4:]:
                     code += ',' + maketypetocpptype(argv[0]) + ' ' + argv[1]
                 code += ') = 0;\n\n'
                 code += '	void call_' + func[1] + '(Fossilizid::juggle::channel * ch, boost::shared_ptr<Fossilizid::juggle::object> v){\n'
-                for argv in func[2:]:
-                    code += makevalue(argv[0], argv[1], struct)
-                code += '		auto ret = ' + func[1] + '(' + func[2][1]
                 for argv in func[3:]:
+                    code += makevalue(argv[0], argv[1], struct)
+                code += '		auto ret = ' + func[2] + '(' + func[3][1]
+                for argv in func[4:]:
                     code += ', ' + argv[1]
                 code += ');\n'
                 code += '		boost::shared_ptr<Fossilizid::juggle::object> r = boost::make_shared<' + achieve_object + '>();\n'
                 code += '		(*r)[\"suuid\"] = (*v)[\"suuid\"].asstring();\n'
                 code += '		(*r)[\"method\"] = (*v)[\"method\"].asstring();\n'
                 code += '		(*r)[\"rpcevent\"] = \"reply_rpc_method\";\n\n'
-                if func[0].find('std::vector') != -1:
+                if func[1].find('std::vector') != -1:
                     code += '		for(auto v : ret){\n'
                     code += '			(*r)[\"ret\"].append(v);\n'
                     code += '		}\n'
                 else:
                     code += '		(*r)[\"ret\"] = ret;\n'
-                code += '		ch->push(r);\n'
+                if func[0] == 'reliable':
+                    code += '		ch->push(r);\n'
+                if func[0] == 'fast':
+                    code += '		ch->post(r);\n'
                 code += '	}\n\n'
             code += '};\n\n' + k + ' * create_' + k + '();\n\n'
 

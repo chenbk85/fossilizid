@@ -29,13 +29,19 @@ uuid::uuid caller::module_id(){
 	return _module_id;
 }
 
-boost::shared_ptr<object> caller::call_module_method_sync(std::string methodname, boost::shared_ptr<object> value){
+boost::shared_ptr<object> caller::call_module_method_sync_reliable(std::string methodname, boost::shared_ptr<object> value){
 	semaphore s;
-	call_module_method_async(methodname, value, boost::bind(&semaphore::post, &s, _1));
+	call_module_method_async_reliable(methodname, value, boost::bind(&semaphore::post, &s, _1));
 	return s.wait(-1);
 }
 
-void caller::call_module_method_async(std::string methodname, boost::shared_ptr<object> value, boost::function<void(boost::shared_ptr<object>)> callback){
+boost::shared_ptr<object> caller::call_module_method_sync_fast(std::string methodname, boost::shared_ptr<object> value){
+	semaphore s;
+	call_module_method_async_fast(methodname, value, boost::bind(&semaphore::post, &s, _1));
+	return s.wait(-1);
+}
+
+void caller::call_module_method_async_reliable(std::string methodname, boost::shared_ptr<object> value, boost::function<void(boost::shared_ptr<object>)> callback){
 	(*value)["method"] = methodname;
 	(*value)["suuid"] = uuid::UUID();
 	(*value)["rpcevent"] = "call_rpc_method";
@@ -43,6 +49,16 @@ void caller::call_module_method_async(std::string methodname, boost::shared_ptr<
 	boost::static_pointer_cast<juggleservice>(_service_handle)->register_rpc_callback((*value)["suuid"].asstring(), callback);
 	
 	_ch->push(value);
+}
+
+void caller::call_module_method_async_fast(std::string methodname, boost::shared_ptr<object> value, boost::function<void(boost::shared_ptr<object>)> callback){
+	(*value)["method"] = methodname;
+	(*value)["suuid"] = uuid::UUID();
+	(*value)["rpcevent"] = "call_rpc_method";
+
+	boost::static_pointer_cast<juggleservice>(_service_handle)->register_rpc_callback((*value)["suuid"].asstring(), callback);
+
+	_ch->post(value);
 }
 
 } /* namespace juggle */
