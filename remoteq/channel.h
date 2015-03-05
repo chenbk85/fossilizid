@@ -16,10 +16,23 @@
 namespace Fossilizid{
 namespace remoteq {
 
+namespace reliable{
+
 /*
  * connect to remote endpoint
  */
 CHANNEL connect(ENDPOINT ep, QUEUE que = 0);
+
+} /* namespace reliable */
+
+namespace fast{
+
+/*
+ * create a channel to remote endpoint
+ */
+CHANNEL channel(ENDPOINT ep, QUEUE que = 0);
+
+} /* namespace fast */
 
 } /* namespace remoteq */
 } /* namespace Fossilizid */

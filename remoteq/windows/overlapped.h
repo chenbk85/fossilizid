@@ -19,9 +19,11 @@ namespace Fossilizid{
 namespace remoteq {
 
 enum iocp_type{
-	iocp_type_accept,
-	iocp_type_send,
-	iocp_type_recv,
+	iocp_type_tcp_accept,
+	iocp_type_tcp_send,
+	iocp_type_tcp_recv,
+	iocp_type_udp_send,
+	iocp_type_udp_recv,
 };
 
 struct overlappedex : public OVERLAPPED{

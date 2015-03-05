@@ -21,6 +21,8 @@ struct endpointimpl : public handle{
 	}
 
 	SOCKADDR_IN addr;
+	int len;
+
 };
 
 } /* namespace remoteq */

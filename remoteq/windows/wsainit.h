@@ -6,8 +6,10 @@
  */
 #ifdef _WINDOWS
 #include <WinSock2.h>
+#include <Mswsock.h>
 
 #pragma comment(lib, "Ws2_32.lib")
+#pragma comment(lib, "Mswsock.lib")
 
 #ifndef _wsainit_h
 #define _wsainit_h

@@ -10,20 +10,23 @@
 
 #include "../../pool/objpool.h"
 
-#include "overlapped.h"
+#include "../../acceptor.h"
 
-#include "../acceptor.h"
-#include "acceptorimpl.h"
+#include "../../windows/overlapped.h"
+#include "../../windows/acceptorimpl.h"
+#include "../../windows/channelimpl.h"
+#include "../../windows/queueimpl.h"
+#include "../../windows/endpointimpl.h"
 
-#include "channelimpl.h"
-#include "queueimpl.h"
-#include "endpointimpl.h"
+#include <Mswsock.h>
 
 namespace Fossilizid{
 namespace remoteq {
 
+namespace reliable {
+
 acceptorimlp::acceptorimlp(QUEUE _que, ENDPOINT ep){
-	_handle_type = handle_acceptor_type;
+	_handle_type = handle_reliable_acceptor_type;
 	que = _que;
 
 	sl = socket(AF_INET, SOCK_STREAM, 0);
@@ -53,7 +56,7 @@ acceptorimlp::acceptorimlp(QUEUE _que, ENDPOINT ep){
 	overlappedex * ovlp = pool::objpool<overlappedex>::allocator(1);
 	new (ovlp) overlappedex();
 	ovlp->h = (handle*)this;
-	ovlp->type = iocp_type_accept;
+	ovlp->type = iocp_type_tcp_accept;
 	OVERLAPPED * ovp = static_cast<OVERLAPPED *>(ovlp);
 	memset(ovp, 0, sizeof(OVERLAPPED));
 	if (!AcceptEx(sl, sa, outbuf, 0, sizeof(SOCKADDR_IN) + 16, sizeof(SOCKADDR_IN) + 16, 0, ovp)){
@@ -86,13 +89,13 @@ CHANNEL accept(ACCEPTOR ap){
 	{
 		WSABUF * wsabuf = pool::objpool<WSABUF>::allocator(1);
 		wsabuf->buf = ch->buf;
-		wsabuf->len = 0;
+		wsabuf->len = ch->buflen;
 		DWORD bytes = 0;
 		DWORD flags = 0;
 		overlappedex * ovp = pool::objpool<overlappedex>::allocator(1);
 		new (ovp)overlappedex();
 		ovp->h = (handle*)ch;
-		ovp->type = iocp_type_recv;
+		ovp->type = iocp_type_tcp_recv;
 		OVERLAPPED * ovp_ = static_cast<OVERLAPPED *>(ovp);
 		memset(ovp_, 0, sizeof(OVERLAPPED));
 		WSARecv(ch->s, wsabuf, 1, &bytes, &flags, ovp_, 0);
@@ -105,7 +108,7 @@ CHANNEL accept(ACCEPTOR ap){
 		overlappedex * ovlp = pool::objpool<overlappedex>::allocator(1);
 		new (ovlp)overlappedex();
 		ovlp->h = (handle*)ap;
-		ovlp->type = iocp_type_accept;
+		ovlp->type = iocp_type_tcp_accept;
 		OVERLAPPED * ovp_ = static_cast<OVERLAPPED *>(ovlp);
 		memset(ovp_, 0, sizeof(OVERLAPPED));
 		AcceptEx(((acceptorimlp*)((handle*)ap))->sl, ((acceptorimlp*)((handle*)ap))->sa, ((acceptorimlp*)((handle*)ap))->outbuf, 0, sizeof(SOCKADDR_IN) + 16, sizeof(SOCKADDR_IN) + 16, 0, ovp_);
@@ -113,6 +116,8 @@ CHANNEL accept(ACCEPTOR ap){
 
 	return (CHANNEL)((handle*)ch);
 }
+
+} /* namespace reliable */
 
 } /* namespace remoteq */
 } /* namespace Fossilizid */

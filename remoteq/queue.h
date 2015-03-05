@@ -19,9 +19,11 @@ QUEUE queue();
 
 enum event_type{
 	event_type_none,
-	event_type_accept,
-	event_type_recv,
-	event_type_disconnect,
+	event_type_reliable_accept,
+	event_type_reliable_recv,
+	event_type_reliable_disconnect,
+	event_type_fast_accept,
+	event_type_fast_recv,
 };
 
 struct EVENT{

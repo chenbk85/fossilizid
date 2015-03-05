@@ -14,10 +14,12 @@ namespace Fossilizid{
 namespace remoteq {
 
 enum handle_type{
-	handle_channel_type,
 	handle_queue_type,
-	handle_acceptor_type,
 	handle_endpoint_type,
+	handle_reliable_acceptor_type,
+	handle_fast_acceptor_type,
+	handle_reliable_channel_type,
+	handle_fast_channel_type,
 };
 
 struct handle{
