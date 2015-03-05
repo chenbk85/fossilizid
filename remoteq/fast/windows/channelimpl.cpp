@@ -32,9 +32,9 @@ CHANNEL channel(ENDPOINT ep, QUEUE que) {
 	channelimpl * ch = pool::objpool<channelimpl>::allocator(1);
 	new (ch) channelimpl(que, s, ep);
 
-	CreateIoCompletionPort((HANDLE)ch->s, ((queueimpl*)((handle*)ch->que))->iocp, 0, 0);
-
 	if (ch->que != 0){
+		CreateIoCompletionPort((HANDLE)ch->s, ((queueimpl*)((handle*)ch->que))->iocp, 0, 0);
+
 		WSABUF * wsabuf = pool::objpool<WSABUF>::allocator(1);
 		wsabuf->buf = ch->buf;
 		wsabuf->len = 0;

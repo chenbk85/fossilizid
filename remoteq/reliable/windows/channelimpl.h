@@ -58,7 +58,7 @@ bool push(CHANNEL ch, CMD & cmd, CMDTOBUF fn){
 	overlappedex * ovp = pool::objpool<overlappedex>::allocator(1);
 	new (ovp)overlappedex();
 	ovp->h = (handle*)(channelimpl*)((handle*)ch);
-	ovp->type = iocp_type_send;
+	ovp->type = iocp_type_tcp_send;
 	ovp->sendbuf.buf = buf;
 	OVERLAPPED * ovp_ = static_cast<OVERLAPPED *>(ovp);
 	memset(ovp_, 0, sizeof(OVERLAPPED));
@@ -94,7 +94,7 @@ bool pop(CHANNEL ch, CMD & cmd, BUFTOCMD fn){
 				if (error != WSAEWOULDBLOCK){
 					EVENT ev;
 					ev.handle.ch = ch;
-					ev.type = event_type_disconnect;
+					ev.type = event_type_reliable_disconnect;
 					((queueimpl*)((channelimpl*)((handle*)ch))->que)->evque.push(ev);
 					break;
 				} else {
@@ -106,7 +106,7 @@ bool pop(CHANNEL ch, CMD & cmd, BUFTOCMD fn){
 				if ((queueimpl*)((channelimpl*)((handle*)ch))->que != 0){
 					EVENT ev;
 					ev.handle.ch = ch;
-					ev.type = event_type_disconnect;
+					ev.type = event_type_reliable_disconnect;
 					((queueimpl*)((channelimpl*)((handle*)ch))->que)->evque.push(ev);
 				}
 				break;
@@ -135,7 +135,7 @@ bool pop(CHANNEL ch, CMD & cmd, BUFTOCMD fn){
 				implch->rindex = 0;
 
 				if (implch->windex == implch->buflen){
-					buflen = implch->buflen;
+					auto buflen = implch->buflen;
 					implch->buflen *= 2;
 					char * tmp = implch->buf;
 					implch->buf = (char*)pool::mempool::allocator(implch->buflen);

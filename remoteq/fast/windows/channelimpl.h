@@ -59,7 +59,7 @@ bool push(CHANNEL ch, CMD & cmd, CMDTOBUF fn){
 	overlappedex * ovp = pool::objpool<overlappedex>::allocator(1);
 	new (ovp)overlappedex();
 	ovp->h = (handle*)(channelimpl*)((handle*)ch);
-	ovp->type = iocp_type_send;
+	ovp->type = iocp_type_udp_send;
 	ovp->sendbuf.buf = buf;
 	OVERLAPPED * ovp_ = static_cast<OVERLAPPED *>(ovp);
 	memset(ovp_, 0, sizeof(OVERLAPPED));

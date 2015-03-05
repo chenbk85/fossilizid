@@ -42,7 +42,7 @@ void dispense(EVENT & ev, DWORD bytes, handle * h){
 		ev.handle.acp = (ACCEPTOR)(acp);
 		
 		fast::channelimpl * ch = 0;
-		int64_t key = ((endpointimpl*)acp->from)->addr.sin_addr.S_un.S_addr || (((endpointimpl*)acp->from)->addr.sin_port << 32);
+		int64_t key = ((endpointimpl*)acp->from)->addr.sin_addr.S_un.S_addr || (((uint64_t)((endpointimpl*)acp->from)->addr.sin_port) << 32);
 		auto find = acp->channels.find(key);
 		if (find == acp->channels.end()){
 			ch = pool::objpool<fast::channelimpl>::allocator(1);
@@ -51,7 +51,7 @@ void dispense(EVENT & ev, DWORD bytes, handle * h){
 		}else{
 			ch = (fast::channelimpl *)find->second;
 		}
-		if (bytes >= (ch->buflen - ch->windex)){
+		if (bytes >= DWORD(ch->buflen - ch->windex)){
 			auto buflen = ch->buflen;
 			ch->buflen *= 2;
 			char * tmp = ch->buf;
