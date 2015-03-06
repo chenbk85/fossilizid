@@ -36,39 +36,44 @@ QUEUE queue(){
 }
 
 void dispense(EVENT & ev, DWORD bytes, handle * h){
-	if (h->_handle_type == handle_fast_acceptor_type){
-		fast::acceptorimlp * acp = (fast::acceptorimlp*)h;
+	fast::acceptorimlp * acp = (fast::acceptorimlp*)h;
+	fast::channelimpl * ch = 0;
+	uint32_t addr = ((endpointimpl*)acp->from)->addr.sin_addr.S_un.S_addr;
+	uint32_t port = ((endpointimpl*)acp->from)->addr.sin_port;
+	uint64_t key = (addr | (uint64_t)(port) << 32);
+	auto find = acp->channels.find(key);
+	if (find == acp->channels.end()){
 		ev.type = event_type_fast_accept;
 		ev.handle.acp = (ACCEPTOR)(acp);
-		
-		fast::channelimpl * ch = 0;
-		int64_t key = ((endpointimpl*)acp->from)->addr.sin_addr.S_un.S_addr || (((uint64_t)((endpointimpl*)acp->from)->addr.sin_port) << 32);
-		auto find = acp->channels.find(key);
-		if (find == acp->channels.end()){
-			ch = pool::objpool<fast::channelimpl>::allocator(1);
-			new (ch)fast::channelimpl(acp->que, acp->s, endpoint(inet_ntoa(((endpointimpl*)acp->from)->addr.sin_addr), ((endpointimpl*)acp->from)->addr.sin_port));
-			acp->chque.push(ch);
-		}else{
-			ch = (fast::channelimpl *)find->second;
-		}
-		if (bytes >= DWORD(ch->buflen - ch->windex)){
-			auto buflen = ch->buflen;
-			ch->buflen *= 2;
-			char * tmp = ch->buf;
-			ch->buf = (char*)pool::mempool::allocator(ch->buflen);
-			memcpy(ch->buf, tmp, buflen);
-			pool::mempool::deallocator(tmp, buflen);
-		}
-		memmove(ch->buf + ch->windex, acp->outbuf, bytes);
+
+		ch = pool::objpool<fast::channelimpl>::allocator(1);
+		new (ch)fast::channelimpl(acp->que, acp->s, endpoint(inet_ntoa(((endpointimpl*)acp->from)->addr.sin_addr), ((endpointimpl*)acp->from)->addr.sin_port));
+		ch->acp = acp;
+		acp->channels.insert(std::make_pair(key, ch));
+		acp->chque.push(ch);
 
 		EVENT recvev;
 		recvev.type = event_type_fast_recv;
-		recvev.handle.acp = (CHANNEL)(ch);
+		recvev.handle.ch = (CHANNEL)(ch);
 		((queueimpl *)acp->que)->evque.push(recvev);
-	}else if (h->_handle_type == handle_fast_channel_type){
+
+	}else{
+		ch = (fast::channelimpl *)find->second;
+
 		ev.type = event_type_fast_recv;
-		ev.handle.ch = (CHANNEL)((fast::channelimpl*)h);
+		ev.handle.ch = (CHANNEL)(ch);
 	}
+
+	if (bytes >= DWORD(ch->buflen - ch->windex)){
+		auto buflen = ch->buflen;
+		ch->buflen *= 2;
+		char * tmp = ch->buf;
+		ch->buf = (char*)pool::mempool::allocator(ch->buflen);
+		memcpy(ch->buf, tmp, buflen);
+		pool::mempool::deallocator(tmp, buflen);
+	}
+	memmove(ch->buf + ch->windex, acp->outbuf, bytes);
+	ch->windex += bytes;
 }
 
 EVENT queue(QUEUE que){

@@ -20,6 +20,8 @@
 #include "../../windows/handle.h"
 #include "../../windows/overlapped.h"
 #include "../../windows/queueimpl.h"
+#include "../../windows/endpointimpl.h"
+#include "../../windows/acceptorimpl.h"
 
 namespace Fossilizid{
 namespace remoteq{
@@ -32,6 +34,9 @@ struct channelimpl : public handle{
 		s = s_;
 		que = _que;
 		ep = _ep;
+		
+		from = pool::objpool<endpointimpl>::allocator(1);
+		new (from)endpointimpl();
 
 		rindex = 0;
 		windex = 0;
@@ -42,6 +47,8 @@ struct channelimpl : public handle{
 	QUEUE que;
 	ENDPOINT ep;
 	ENDPOINT from;
+
+	ACCEPTOR acp;
 
 	char * buf;
 	int buflen, rindex, windex;
@@ -63,7 +70,8 @@ bool push(CHANNEL ch, CMD & cmd, CMDTOBUF fn){
 	ovp->sendbuf.buf = buf;
 	OVERLAPPED * ovp_ = static_cast<OVERLAPPED *>(ovp);
 	memset(ovp_, 0, sizeof(OVERLAPPED));
-	if (WSASendTo(((channelimpl*)((handle*)ch))->s, wsabuf, 1, &bytes, 0, (sockaddr*)(&((endpointimpl*)ch->ep)->addr), &((endpointimpl*)ch->ep)->len, ovp_, 0) == SOCKET_ERROR){
+	((endpointimpl*)(((channelimpl*)((handle*)ch))->ep))->len = sizeof(SOCKADDR_IN);
+	if (WSASendTo(((channelimpl*)((handle*)ch))->s, wsabuf, 1, &bytes, 0, (sockaddr*)(&(((endpointimpl*)(((channelimpl*)((handle*)ch))->ep))->addr)), ((endpointimpl*)(((channelimpl*)((handle*)ch))->ep))->len, ovp_, 0) == SOCKET_ERROR){
 		if (WSAGetLastError() != WSA_IO_PENDING){
 			return false;
 		}
@@ -79,10 +87,16 @@ bool pop(CHANNEL ch, CMD & cmd, BUFTOCMD fn){
 		while (1){
 			char * buf = implch->buf + implch->windex;
 			int buflen = implch->buflen - implch->windex;
+			((endpointimpl*)implch->from)->len = sizeof(SOCKADDR_IN);
+			int len = recvfrom(((channelimpl*)((handle*)implch))->s, buf, buflen, 0, (sockaddr*)(&((endpointimpl*)implch->from)->addr), &((endpointimpl*)implch->from)->len);
+			
+			if (len < 0){
+				auto error = WSAGetLastError();
+				break;
+			}
 
-			int len = recvfrom(((channelimpl*)((handle*)ch))->s, buf, buflen, 0, (sockaddr*)(&((endpointimpl*)ch->from)->addr), &((endpointimpl*)ch->from)->len);
-			if (((endpointimpl*)ch->from)->addr.sin_addr.S_un.S_addr != ((endpointimpl*)ch->ep)->addr.sin_addr.S_un.S_addr || 
-				((endpointimpl*)ch->from)->addr.sin_port != ((endpointimpl*)ch->ep)->addr.sin_port){
+			if (((endpointimpl*)implch->from)->addr.sin_addr.S_un.S_addr != ((endpointimpl*)implch->ep)->addr.sin_addr.S_un.S_addr || 
+				((endpointimpl*)implch->from)->addr.sin_port != ((endpointimpl*)implch->ep)->addr.sin_port){
 				continue;
 			}
 
@@ -93,27 +107,8 @@ bool pop(CHANNEL ch, CMD & cmd, BUFTOCMD fn){
 			if (len > 0 && len < buflen){
 				break;
 			}
-
-			if (len < 0){
-				int error = WSAGetLastError();
-				if (error != WSAEWOULDBLOCK){
-					EVENT ev;
-					ev.handle.ch = ch;
-					ev.type = event_type_disconnect;
-					((queueimpl*)((channelimpl*)((handle*)ch))->que)->evque.push(ev);
-					break;
-				} else {
-					break;
-				}
-			}
-
+			
 			if (len == 0){
-				if ((queueimpl*)((channelimpl*)((handle*)ch))->que != 0){
-					EVENT ev;
-					ev.handle.ch = ch;
-					ev.type = event_type_disconnect;
-					((queueimpl*)((channelimpl*)((handle*)ch))->que)->evque.push(ev);
-				}
 				break;
 			}
 
@@ -140,7 +135,7 @@ bool pop(CHANNEL ch, CMD & cmd, BUFTOCMD fn){
 				implch->rindex = 0;
 
 				if (implch->windex == implch->buflen){
-					buflen = implch->buflen;
+					auto buflen = implch->buflen;
 					implch->buflen *= 2;
 					char * tmp = implch->buf;
 					implch->buf = (char*)pool::mempool::allocator(implch->buflen);
@@ -160,18 +155,22 @@ bool pop(CHANNEL ch, CMD & cmd, BUFTOCMD fn){
 		implch->windex = 0;
 
 		if (((channelimpl*)((handle*)ch))->que != 0){
+			acceptorimlp * acp = (acceptorimlp *)(handle*)implch->acp;
+
 			WSABUF * wsabuf = pool::objpool<WSABUF>::allocator(1);
-			wsabuf->buf = implch->buf;
-			wsabuf->len = 0;
+			wsabuf->buf = acp->outbuf;
+			wsabuf->len = 65536;
 			DWORD bytes = 0;
 			DWORD flags = 0;
 			overlappedex * ovp = pool::objpool<overlappedex>::allocator(1);
 			new (ovp) overlappedex();
-			ovp->h = (handle*)(channelimpl*)((handle*)ch);
+			ovp->h = (handle*)(acceptorimlp*)((handle*)acp);
 			ovp->type = iocp_type_udp_recv;
 			OVERLAPPED * ovp_ = static_cast<OVERLAPPED *>(ovp);
 			memset(ovp_, 0, sizeof(OVERLAPPED));
-			if (WSARecvFrom(implch->s, wsabuf, 1, &bytes, &flags, (sockaddr*)(&((endpointimpl*)ch->from)->addr), &((endpointimpl*)ch->from)->len, ovp_, 0) == SOCKET_ERROR){
+			memset(&((endpointimpl*)acp->from)->addr, 0, sizeof(SOCKADDR_IN));
+			((endpointimpl*)implch->from)->len = sizeof(SOCKADDR_IN);
+			if (WSARecvFrom(acp->s, wsabuf, 1, &bytes, &flags, (sockaddr*)(&((endpointimpl*)acp->from)->addr), &((endpointimpl*)acp->from)->len, ovp_, 0) == SOCKET_ERROR){
 				if (WSAGetLastError() != WSA_IO_PENDING){
 					return false;
 				}

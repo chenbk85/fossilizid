@@ -90,25 +90,10 @@ bool pop(CHANNEL ch, CMD & cmd, BUFTOCMD fn){
 			}
 
 			if (len < 0){
-				int error = WSAGetLastError();
-				if (error != WSAEWOULDBLOCK){
-					EVENT ev;
-					ev.handle.ch = ch;
-					ev.type = event_type_reliable_disconnect;
-					((queueimpl*)((channelimpl*)((handle*)ch))->que)->evque.push(ev);
-					break;
-				} else {
-					break;
-				}
+				break;
 			}
 
 			if (len == 0){
-				if ((queueimpl*)((channelimpl*)((handle*)ch))->que != 0){
-					EVENT ev;
-					ev.handle.ch = ch;
-					ev.type = event_type_reliable_disconnect;
-					((queueimpl*)((channelimpl*)((handle*)ch))->que)->evque.push(ev);
-				}
 				break;
 			}
 

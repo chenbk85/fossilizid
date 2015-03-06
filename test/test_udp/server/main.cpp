@@ -1,32 +1,29 @@
-#include <vector>
-#include "../../reliablyt/UDPService.h"
-#include "../../reliablyt/UDPConnect.h"
-
-std::vector<boost::shared_ptr<UDPConnect> > vmap;
-
-void onRecv(char * buf, int len){
-	char formatbuf[32];
-	memset(formatbuf, 0, 32);
-	memcpy(formatbuf, buf, len);
-	printf(formatbuf);
-	printf("\n");
-}
-
-void onConnect(boost::shared_ptr<UDPConnect> c){
-	vmap.push_back(c);
-	c->sigRecv.connect(onRecv);
-}
+#include "../../third_party/json/json_protocol.h"
+#include "../../remoteq/remote_queue.h"
 
 int main(){
-	UDPService _service("127.0.0.1", 7777);
-
-	_service.sigConnect.connect(onConnect);
+	Fossilizid::remoteq::QUEUE que = Fossilizid::remoteq::queue();
+	Fossilizid::remoteq::ENDPOINT ep = Fossilizid::remoteq::endpoint("127.0.0.1", 4567);
+	Fossilizid::remoteq::ACCEPTOR acceptor = Fossilizid::remoteq::fast::acceptor(que, ep);
 
 	while (1){
-		boost::this_thread::sleep(boost::posix_time::seconds(1));
-		for (auto v : vmap){
-			v->reliable_send("test server", 11);
+		Fossilizid::remoteq::EVENT ev = Fossilizid::remoteq::queue(que);
+
+		if (ev.type == Fossilizid::remoteq::event_type_fast_accept){
+			Fossilizid::remoteq::CHANNEL ch = Fossilizid::remoteq::fast::accept(ev.handle.acp);
+			
+			Json::Value value;
+			value["test"] = "ok";
+			Fossilizid::remoteq::fast::push(ch, value, Fossilizid::json_parser::json_to_buf);
 		}
+		else if (ev.type == Fossilizid::remoteq::event_type_fast_recv){
+			Json::Value ret;
+			if (Fossilizid::remoteq::fast::pop(ev.handle.ch, ret, Fossilizid::json_parser::buf_to_json)){
+				printf("ret=%s\n", ret["ret"].asString().c_str());
+			}
+		}
+
+		Sleep(1);
 	}
 
 	return 0;

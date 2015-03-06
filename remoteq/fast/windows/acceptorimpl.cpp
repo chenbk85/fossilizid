@@ -45,6 +45,9 @@ acceptorimlp::acceptorimlp(QUEUE _que, ENDPOINT ep){
 
 	memset(outbuf, 0, sizeof(outbuf));
 
+	from = pool::objpool<endpointimpl>::allocator(1);
+	new (from)endpointimpl();
+
 	WSABUF * wsabuf = pool::objpool<WSABUF>::allocator(1);
 	wsabuf->buf = outbuf;
 	wsabuf->len = 65536;
@@ -56,9 +59,11 @@ acceptorimlp::acceptorimlp(QUEUE _que, ENDPOINT ep){
 	ovlp->type = iocp_type_udp_recv;
 	OVERLAPPED * ovp = static_cast<OVERLAPPED *>(ovlp);
 	memset(ovp, 0, sizeof(OVERLAPPED));
+	((endpointimpl*)from)->len = sizeof(SOCKADDR_IN);
 	if (WSARecvFrom(s, wsabuf, 1, &bytes, &flags, (sockaddr*)(&((endpointimpl*)from)->addr), &((endpointimpl*)from)->len, ovp, 0) == SOCKET_ERROR){
-		if (WSAGetLastError() != WSA_IO_PENDING){
-			throw std::exception("WSARecvFrom error", WSAGetLastError());
+		auto error = WSAGetLastError();
+		if (error != WSA_IO_PENDING){
+			throw std::exception("WSARecvFrom error", error);
 		}
 	}
 }

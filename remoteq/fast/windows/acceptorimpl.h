@@ -33,7 +33,7 @@ struct acceptorimlp : public handle{
 
 	container::msque<CHANNEL> chque;
 
-	boost::unordered_map<int64_t, CHANNEL> channels;
+	boost::unordered_map<uint64_t, CHANNEL> channels;
 
 };
 
