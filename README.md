@@ -40,9 +40,6 @@ pool: mempool & objpool
 remoteq: network library
 
 ----------
-reliablyt: udp reliably transmission 
-
-----------
 
 Contact me
 ----------
