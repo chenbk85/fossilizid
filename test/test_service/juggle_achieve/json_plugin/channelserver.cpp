@@ -27,7 +27,7 @@ channelserver::~channelserver(){
 
 void channelserver::init(char * ip, short port){
 	que = remoteq::queue();
-	acp = remoteq::acceptor(que, remoteq::endpoint(ip, port));
+	acp = remoteq::reliable::acceptor(que, remoteq::endpoint(ip, port));
 
 	_service->init();
 }
@@ -39,9 +39,9 @@ void channelserver::poll(){
 	case remoteq::event_type_none:
 		break;
 				
-	case remoteq::event_type_accept:
+	case remoteq::event_type_reliable_accept:
 		{
-			remoteq::CHANNEL ch = remoteq::accept(ev.handle.acp);
+			remoteq::CHANNEL ch = remoteq::reliable::accept(ev.handle.acp);
 			if (ch != 0){
 				boost::shared_ptr<jsonplugin::channel> c = boost::make_shared<jsonplugin::channel>(ch);
 				mapchannel.insert(std::make_pair(ch, c));
@@ -50,12 +50,12 @@ void channelserver::poll(){
 		}
 		break;
 
-	case remoteq::event_type_recv:
+	case remoteq::event_type_reliable_recv:
 		{	
 			remoteq::CHANNEL ch = ev.handle.ch;
 				
 			boost::shared_ptr<juggle::object> v = boost::make_shared<jsonplugin::object>();
-			while (remoteq::pop(ch, *v, jsonplugin::buf_to_object)){
+			while (remoteq::reliable::pop(ch, *v, jsonplugin::buf_to_object)){
 				if (!v->hasfield("suuid")){
 					continue;
 				}
@@ -65,7 +65,7 @@ void channelserver::poll(){
 		}
 		break;
 
-	case remoteq::event_type_disconnect:
+	case remoteq::event_type_reliable_disconnect:
 		{
 			Fossilizid::juggle::_service_handle->remove_rpcsession(mapchannel[ev.handle.ch].get());
 			mapchannel.erase(ev.handle.ch);
@@ -95,7 +95,7 @@ channelserver::~channelserver(){
 }
 
 boost::shared_ptr<juggle::channel> channelserver::connect(char * ip, short port){
-	remoteq::CHANNEL ch = remoteq::connect(remoteq::endpoint(ip, port), que);
+	remoteq::CHANNEL ch = remoteq::reliable::connect(remoteq::endpoint(ip, port), que);
 	if (ch != 0){
 		boost::shared_ptr<jsonplugin::channel> c = boost::make_shared<jsonplugin::channel>(ch);
 		mapchannel.insert(std::make_pair(ch, c));
@@ -127,12 +127,12 @@ void channelserver::net_work(){
 	case remoteq::event_type_none:
 		break;
 
-	case remoteq::event_type_recv:
+	case remoteq::event_type_reliable_recv:
 		{	
 			remoteq::CHANNEL ch = ev.handle.ch;
 				
 			boost::shared_ptr<juggle::object> v = boost::make_shared<jsonplugin::object>();
-			while (remoteq::pop(ch, *v, jsonplugin::buf_to_object)){
+			while (remoteq::reliable::pop(ch, *v, jsonplugin::buf_to_object)){
 				if (!v->hasfield("suuid")){
 					continue;
 				}
@@ -142,7 +142,7 @@ void channelserver::net_work(){
 		}
 		break;
 
-	case remoteq::event_type_disconnect:
+	case remoteq::event_type_reliable_disconnect:
 		{
 			Fossilizid::juggle::_service_handle->remove_rpcsession(mapchannel[ev.handle.ch].get());
 			mapchannel.erase(ev.handle.ch);

@@ -33,9 +33,17 @@ public:
 	 * push a object to channel
 	 */
 	virtual void push(boost::shared_ptr<juggle::object> v){
-		remoteq::push(ch, *v, jsonplugin::object_to_buf);
+		remoteq::reliable::push(ch, *v, jsonplugin::object_to_buf);
 	}
 	
+	/*
+	 * post a object to channel
+	 */
+	virtual void post(boost::shared_ptr<juggle::object> v){
+		remoteq::reliable::push(ch, *v, jsonplugin::object_to_buf);
+	}
+
+
 	/*
 	 * get a object from channel
 	 */

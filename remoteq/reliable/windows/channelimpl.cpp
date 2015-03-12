@@ -56,7 +56,7 @@ CHANNEL connect(ENDPOINT ep, QUEUE que) {
 
 		WSABUF * wsabuf = pool::objpool<WSABUF>::allocator(1);
 		wsabuf->buf = ch->buf;
-		wsabuf->len = 0;
+		wsabuf->len = ch->buflen;
 		DWORD bytes = 0;
 		DWORD flags = 0;
 		overlappedex * ovp = pool::objpool<overlappedex>::allocator(1);
