@@ -93,7 +93,7 @@ EVENT queue(QUEUE que){
 		LPOVERLAPPED ovp = 0;
 		if (GetQueuedCompletionStatus(impl->iocp, &bytes, &ptr, &ovp, 0)){
 			overlappedex * ovlp = static_cast<overlappedex *>(ovp);
-		
+			
 			if (ovlp->type == iocp_type_tcp_accept){
 				ev.type = event_type_reliable_accept;
 				ev.handle.acp = (ACCEPTOR)((reliable::acceptorimlp*)ovlp->h);
